@@ -14,7 +14,7 @@ nodes_per_zone = config.get_int("nodesPerZone", 1)
 
 # GKE
 # Create the GKE cluster with autopilot enabled
-cluster = gcp.container.Cluster(f"{gcp_project}-gke-cluster",
+cluster = gcp.container.Cluster("simple-gke-cluster",
     location=gcp_region,
     enable_autopilot=True,
     initial_node_count=nodes_per_zone,
@@ -22,7 +22,7 @@ cluster = gcp.container.Cluster(f"{gcp_project}-gke-cluster",
 )
 
 # Create a NodePool with autoscaling enabled
-node_pool = gcp.container.NodePool("{gcp_project}-app-node-pool",
+node_pool = gcp.container.NodePool("app-node-pool",
     cluster=cluster.name,
     location=cluster.location,
     autoscaling=gcp.container.NodePoolAutoscalingArgs(
