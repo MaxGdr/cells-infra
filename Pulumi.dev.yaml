@@ -1,0 +1,5 @@
+config:
+  cells-mvp:nodesPerZone: "1"
+  gcp:project: rock-verbena-424808-r3
+  gcp:region: europe-west9
+  pulumi:template: kubernetes-gcp-python
