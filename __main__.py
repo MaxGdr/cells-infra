@@ -12,6 +12,7 @@ config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
 
 
+# GKE
 # Create the GKE cluster with autopilot enabled
 cluster = gcp.container.Cluster(f"{gcp_project}-gke-cluster",
     location=gcp_region,
@@ -35,6 +36,7 @@ node_pool = gcp.container.NodePool("{gcp_project}-app-node-pool",
         preemptible=True,
     ),
 )
+
 
 # Export the cluster's endpoint and name
 pulumi.export("cluster_name", cluster.name)
