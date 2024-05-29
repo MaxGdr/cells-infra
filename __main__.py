@@ -26,7 +26,7 @@ node_pool = gcp.container.NodePool("app-node-pool",
     cluster=cluster.name,
     location=cluster.location,
     autoscaling=gcp.container.NodePoolAutoscalingArgs(
-        enabled=True,
+        location_policy="BALANCED",
         min_node_count=1,
         max_node_count=2,
     ),
