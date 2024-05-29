@@ -1,0 +1,25 @@
+name: Pulumi
+on:
+  push:
+    branches:
+      - main
+jobs:
+  update:
+    name: Update
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+      - name: Configure GCP Credentials
+        uses: 'google-github-actions/auth@v2'
+          with:
+            credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      - run: pip install -r requirements.txt
+      - uses: pulumi/actions@v3
+        with:
+          command: up
+          stack-name: MaxGdr/cells-mvp/dev # When using an individual account, only use stack-name.
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
