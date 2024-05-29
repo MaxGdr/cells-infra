@@ -16,9 +16,7 @@ nodes_per_zone = config.get_int("nodesPerZone", 1)
 # Create the GKE cluster with autopilot enabled
 cluster = gcp.container.Cluster(f"{gcp_project}-gke-cluster",
     location=gcp_region,
-    autopilot=gcp.container.ClusterAutopilotArgs(
-        enabled=True,
-    ),
+    enable_autopilot=True,
     initial_node_count=nodes_per_zone,
     min_master_version="latest",
 )
