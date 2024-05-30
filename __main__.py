@@ -1,6 +1,7 @@
 
 import pulumi
-from pulumi_gcp import container
+from pulumi import Output
+from pulumi_gcp import container, artifactregistry, serviceaccount, projects
 from pulumi_kubernetes import Provider
 
 # Get some provider-namespaced configuration values
@@ -12,6 +13,33 @@ gcp_zone = provider_cfg.get("zone", "europe-west9-a")
 # Get some additional configuration values
 config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
+
+
+# Creates Artifact repository
+docker_repository = artifactregistry.Repository(
+    resource_name="cells-artifactory",
+    location=gcp_region,
+    repository_id="cells-dockers",
+    description="Docker repository for cells project",
+    format="DOCKER"
+)
+
+# Create a service account for the Kubernetes cluster
+k8s_service_account = serviceaccount.Account(
+    resource_name="k8s-sa",
+    account_id="k8s-sa",
+    display_name="Kubernetes Service Account"
+)
+
+# Bind artifactregistry.reader permission to k8s_service_account in artifact
+iam_binding = k8s_service_account.email.apply(
+    lambda email: projects.IAMBinding(
+        "artifact-registry-reader-binding",
+        project=gcp_project,
+        role="roles/artifactregistry.reader",
+        members=[f"serviceAccount:{email}"],
+    )
+)
 
 base_resource_name = "cells-gke-cluster"
 
@@ -25,6 +53,7 @@ cluster = container.Cluster(
     min_master_version=engine_version,
     node_version=engine_version,
     node_config=container.ClusterNodeConfigArgs(
+        service_account=k8s_service_account.email,
         machine_type="e2-medium",
         disk_size_gb=100,
         disk_type="pd-balanced",
@@ -34,7 +63,8 @@ cluster = container.Cluster(
             "https://www.googleapis.com/auth/logging.write",
             "https://www.googleapis.com/auth/monitoring"
         ]
-    )
+    ),
+    opts=pulumi.ResourceOptions(depends_on=[k8s_service_account])
 )
 
 # Export the Cluster name
