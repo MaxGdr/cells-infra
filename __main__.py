@@ -1,7 +1,7 @@
 
 import pulumi
 from pulumi import Output
-from pulumi_gcp import container, artifactregistry, serviceaccount, projects
+from pulumi_gcp import container, artifactregistry, serviceaccount, projects, storage
 from pulumi_kubernetes import Provider
 
 # Get some provider-namespaced configuration values
@@ -13,6 +13,7 @@ gcp_zone = provider_cfg.get("zone", "europe-west9-a")
 # Get some additional configuration values
 config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
+project_number = config.get("projectNumber")
 
 
 # Creates Artifact repository
@@ -103,3 +104,22 @@ kubeconfig = pulumi.Output.all(cluster.name, cluster.endpoint, cluster.master_au
 
 # Create a Kubernetes provider instance that uses our cluster from above
 cluster_provider = Provider(base_resource_name, kubeconfig=kubeconfig)
+
+
+# Create a GCS bucket for machine learning vertex projects
+gcs_bucket = storage.Bucket(
+    resource_name="ml-vertex-bucket",
+    location=gcp_region,
+    storage_class="STANDARD",
+    force_destroy=True,
+)
+
+SVC_ACCOUNT=f"{project_number}-compute@developer.gserviceaccount.com"
+
+# Bind the service account to the bucket
+compute_sa_storage_iam = projects.IAMBinding(
+    "storage-bucket-admin-binding",
+    project=gcp_project,
+    role="roles/storage.objectAdmin",
+    members=[f"serviceAccount:{SVC_ACCOUNT}"],
+)
