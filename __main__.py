@@ -116,10 +116,18 @@ gcs_bucket = storage.Bucket(
 
 SVC_ACCOUNT=f"{project_number}-compute@developer.gserviceaccount.com"
 
-# Bind the service account to the bucket
-compute_sa_storage_iam = projects.IAMBinding(
-    "storage-bucket-admin-binding",
-    project=gcp_project,
-    role="roles/storage.objectAdmin",
-    members=[f"serviceAccount:{SVC_ACCOUNT}"],
+# Create a service account for the Kubernetes cluster
+ml_service_account = serviceaccount.Account(
+    resource_name="ml-sa",
+    account_id="ml-infra-sa",
+    display_name="ML Infra Service Account"
+)
+
+compute_sa_storage_iam = ml_service_account.email.apply(
+    lambda email: projects.IAMBinding(
+        "storage-bucket-admin-binding",
+        project=gcp_project,
+        role="roles/storage.objectAdmin",
+        members=[f"serviceAccount:{SVC_ACCOUNT}", f"serviceAccount:{email}"],
+    )
 )
