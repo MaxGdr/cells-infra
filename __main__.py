@@ -7,7 +7,6 @@ from pulumi_gcp import (
     serviceaccount,
     projects,
     storage,
-    sql,
 )
 from pulumi_kubernetes import Provider
 
@@ -21,7 +20,6 @@ gcp_zone = provider_cfg.require("zone")
 config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
 project_number = config.get("projectNumber")
-db_password = config.require('dbPassword')
 
 # Creates Artifact repository
 docker_repository = artifactregistry.Repository(
