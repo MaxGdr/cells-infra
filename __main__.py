@@ -1,20 +1,27 @@
 
 import pulumi
 from pulumi import Output
-from pulumi_gcp import container, artifactregistry, serviceaccount, projects, storage
+from pulumi_gcp import (
+    container,
+    artifactregistry,
+    serviceaccount,
+    projects,
+    storage,
+    sql,
+)
 from pulumi_kubernetes import Provider
 
 # Get some provider-namespaced configuration values
 provider_cfg = pulumi.Config("gcp")
 gcp_project = provider_cfg.require("project")
-gcp_region = provider_cfg.get("region", "europe-west9")
-gcp_zone = provider_cfg.get("zone", "europe-west9-a")
+gcp_region = provider_cfg.require("region")
+gcp_zone = provider_cfg.require("zone")
 
 # Get some additional configuration values
 config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
 project_number = config.get("projectNumber")
-
+db_password = config.require('dbPassword')
 
 # Creates Artifact repository
 docker_repository = artifactregistry.Repository(
@@ -129,5 +136,20 @@ compute_sa_storage_iam = ml_service_account.email.apply(
         project=gcp_project,
         role="roles/storage.objectAdmin",
         members=[f"serviceAccount:{SVC_ACCOUNT}", f"serviceAccount:{email}"],
+    )
+)
+
+backend_service_account = serviceaccount.Account(
+    resource_name="backend-sa",
+    account_id="backend-sa",
+    display_name="Cells Backend Service Account"
+)
+
+backend_vertex_iam = backend_service_account.email.apply(
+    lambda email: projects.IAMBinding(
+        "vertex-ai-backend-service-vertex-user-binding",
+        project=gcp_project,
+        role="roles/aiplatform.user",
+        members=[f"serviceAccount:{email}"],
     )
 )
